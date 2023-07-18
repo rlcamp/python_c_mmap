@@ -23,6 +23,7 @@ int main(const int argc, char ** const argv) {
 
     float * out = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (MAP_FAILED == out) NOPE("child: mmap(): %s\n", strerror(errno));
+    if (-1 == close(fd)) NOPE("child: close(): %s\n", strerror(errno));
 
     /* store some values in the shared memory */
     out[0] = 24601.0f;
