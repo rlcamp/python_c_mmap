@@ -32,38 +32,41 @@ except:
 
         return fd
 
-# get an fd
-fd = memfd_create('')
+def main():
+    # get an fd
+    fd = memfd_create('')
 
-# discard the cloexec flag
-fcntl.fcntl(fd, fcntl.F_SETFD, fcntl.fcntl(fd, fcntl.F_GETFD) & ~fcntl.FD_CLOEXEC)
+    # discard the cloexec flag
+    fcntl.fcntl(fd, fcntl.F_SETFD, fcntl.fcntl(fd, fcntl.F_GETFD) & ~fcntl.FD_CLOEXEC)
 
-pid = os.fork()
-if 0 == pid:
-    # replace child's stdout with the new fd, giving it a known value and clearing CLOEXEC
-    os.dup2(fd, 1)
+    pid = os.fork()
+    if 0 == pid:
+        # replace child's stdout with the new fd, giving it a known value and clearing CLOEXEC
+        os.dup2(fd, 1)
 
-    # exec the child, passing it no additional arguments in this particular case
-    os.execl("./child", "child")
+        # exec the child, passing it no additional arguments in this particular case
+        os.execl("./child", "child")
 
-# wait for child to have finished
-child_ret = os.waitpid(pid, 0)
-if (child_ret[1] != 0): raise RuntimeError("child exited nonzero")
+    # wait for child to have finished
+    child_ret = os.waitpid(pid, 0)
+    if (child_ret[1] != 0): raise RuntimeError("child exited nonzero")
 
-# do an mmap of the size of the fd, which may be rounded up to page size
-map = mmap.mmap(fd, os.fstat(fd).st_size, prot=mmap.PROT_READ)
-os.close(fd)
+    # do an mmap of the size of the fd, which may be rounded up to page size
+    map = mmap.mmap(fd, os.fstat(fd).st_size, prot=mmap.PROT_READ)
+    os.close(fd)
 
-# get a pointer to the memory as an array of floats
-try:
-    import numpy
-    out = numpy.ndarray(buffer=memoryview(map), dtype='f', shape=[2])
-except:
-    out = memoryview(map).cast('f')
-    print('using cast instead of numpy', file=sys.stderr)
+    # get a pointer to the memory as an array of floats
+    try:
+        import numpy
+        out = numpy.ndarray(buffer=memoryview(map), dtype='f', shape=[2])
+    except:
+        out = memoryview(map).cast('f')
+        print('using cast instead of numpy', file=sys.stderr)
 
-# do something to show we can use the bytes
-print("child returns: %g %g" % (out[0], out[1]))
+    # do something to show we can use the bytes
+    print("child returns: %g %g" % (out[0], out[1]))
 
-# cleanup
-map.close()
+    # cleanup
+    map.close()
+
+main()
