@@ -55,11 +55,15 @@ map = mmap.mmap(fd, os.fstat(fd).st_size, prot=mmap.PROT_READ)
 os.close(fd)
 
 # get a pointer to the memory as an array of floats
-out = memoryview(map).cast('f')
+try:
+    import numpy
+    out = numpy.ndarray(buffer=memoryview(map), dtype='f', shape=[2])
+except:
+    out = memoryview(map).cast('f')
+    print('using cast instead of numpy', file=sys.stderr)
 
 # do something to show we can use the bytes
 print("child returns: %g %g" % (out[0], out[1]))
 
-# release and cleanup
-out.release()
+# cleanup
 map.close()
