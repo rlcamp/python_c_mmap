@@ -57,7 +57,4 @@ def main():
     # do something to show we can use the bytes
     print("child returns: %g %g, accessible as a %s" % (out[0], out[1], type(out)))
 
-    # cleanup
-    map.close()
-
 main()
