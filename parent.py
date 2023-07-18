@@ -37,17 +37,15 @@ def main():
     # get an fd
     fd = memfd_create('')
 
-    # discard the cloexec flag
+    # discard the cloexec flag (not necessary if passing to a child's stdout or stdin)
     fcntl.fcntl(fd, fcntl.F_SETFD, fcntl.fcntl(fd, fcntl.F_GETFD) & ~fcntl.FD_CLOEXEC)
 
-    # run a child process with its stdout replaced with the fd we created
+    # run a child process, wait for it to finish, and get its return status
     child = subprocess.Popen(['./child', str(fd)], bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=False)
-
-    # wait for child to have finished
     child_ret = child.wait()
     if (child_ret != 0): raise RuntimeError("child exited nonzero")
 
-    # do an mmap of the size of the fd, which may be rounded up to page size
+    # do an mmap of the size of the fd (which may be rounded up to page size, don't trust it)
     map = mmap.mmap(fd, os.fstat(fd).st_size, prot=mmap.PROT_READ)
     os.close(fd)
 
