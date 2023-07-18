@@ -50,15 +50,12 @@ def main():
     os.close(fd)
 
     # get a pointer to the memory as an array of floats
-    try:
-        import numpy
-        out = numpy.ndarray(buffer=memoryview(map), dtype='f', shape=[2])
-    except:
-        out = memoryview(map).cast('f')
-        print('using cast instead of numpy', file=sys.stderr)
+    try: import numpy
+    except: out = memoryview(map).cast('f')
+    else: out = numpy.ndarray(buffer=memoryview(map), dtype='f', shape=[2])
 
     # do something to show we can use the bytes
-    print("child returns: %g %g" % (out[0], out[1]))
+    print("child returns: %g %g, accessible as a %s" % (out[0], out[1], type(out)))
 
     # cleanup
     map.close()
