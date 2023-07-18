@@ -41,7 +41,7 @@ def main():
     fcntl.fcntl(fd, fcntl.F_SETFD, fcntl.fcntl(fd, fcntl.F_GETFD) & ~fcntl.FD_CLOEXEC)
 
     # run a child process with its stdout replaced with the fd we created
-    child = subprocess.Popen('./child', bufsize=0, stdin=subprocess.PIPE, stdout=fd, close_fds=False)
+    child = subprocess.Popen(['./child', str(fd)], bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=False)
 
     # wait for child to have finished
     child_ret = child.wait()
