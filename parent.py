@@ -10,6 +10,7 @@ import mmap
 import os
 import stat
 import fcntl
+import subprocess
 import sys
 
 # shim for memfd_create on non-linux posix systems (macos, &c.) and older linux/python
@@ -39,17 +40,12 @@ def main():
     # discard the cloexec flag
     fcntl.fcntl(fd, fcntl.F_SETFD, fcntl.fcntl(fd, fcntl.F_GETFD) & ~fcntl.FD_CLOEXEC)
 
-    pid = os.fork()
-    if 0 == pid:
-        # replace child's stdout with the new fd, giving it a known value and clearing CLOEXEC
-        os.dup2(fd, 1)
-
-        # exec the child, passing it no additional arguments in this particular case
-        os.execl("./child", "child")
+    # run a child process with its stdout replaced with the fd we created
+    child = subprocess.Popen('./child', bufsize=0, stdin=subprocess.PIPE, stdout=fd, close_fds=False)
 
     # wait for child to have finished
-    child_ret = os.waitpid(pid, 0)
-    if (child_ret[1] != 0): raise RuntimeError("child exited nonzero")
+    child_ret = child.wait()
+    if (child_ret != 0): raise RuntimeError("child exited nonzero")
 
     # do an mmap of the size of the fd, which may be rounded up to page size
     map = mmap.mmap(fd, os.fstat(fd).st_size, prot=mmap.PROT_READ)
